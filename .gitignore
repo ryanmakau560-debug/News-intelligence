@@ -1,0 +1,4 @@
+client_secret.json
+*.db
+__pycache__/
+.env
