@@ -3,31 +3,46 @@ import sqlite3
 def init_db():
     conn = sqlite3.connect('news_data.db')
     cursor = conn.cursor()
-    # Table to store the Google account currently in use
+    
+    # 1. User Session (Stored after login)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_session (
             id INTEGER PRIMARY KEY,
             email TEXT,
             name TEXT
-        )
-    ''')
-    # Table for the news articles (Requirement: DB Usage)
+        )''')
+    
+    # 2. Scraped Articles
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS articles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT,
             link TEXT,
-            summary TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+            category TEXT
+        )''')
+
+    # 3. Watchlist (User's Keywords) - NEW
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS watchlist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            keyword TEXT UNIQUE
+        )''')
+
+    # 4. Bookmarks (Saved Articles) - NEW
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bookmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            article_id INTEGER,
+            FOREIGN KEY (article_id) REFERENCES articles(id)
+        )''')
+        
     conn.commit()
     conn.close()
 
 def save_user(email, name):
     conn = sqlite3.connect('news_data.db')
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM user_session") # Keep only one active user
+    cursor.execute("DELETE FROM user_session") 
     cursor.execute("INSERT INTO user_session (email, name) VALUES (?, ?)", (email, name))
     conn.commit()
     conn.close()
