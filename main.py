@@ -1,74 +1,64 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 import database
-from google_auth_oauthlib.flow import InstalledAppFlow
-import json
+# import scraper (uncomment this once you create scraper.py)
 
-# Scope for requesting basic user info
-SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 
-          'https://www.googleapis.com/auth/userinfo.profile', 'openid']
-
-def start_google_login():
-    try:
-        # This looks for your Google Cloud credentials file
-        flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
-        creds = flow.run_local_server(port=0)
-        
-        # Get user info from the credentials
-        import requests
-        response = requests.get(f'https://www.googleapis.com/oauth2/v1/userinfo?access_token={creds.token}')
-        user_info = response.json()
-        
-        email = user_info.get("email")
-        name = user_info.get("name")
-        
-        # Save to Database
-        database.save_user(email, name)
-        messagebox.showinfo("Success", f"Welcome, {name}!\nLogged in with {email}")
-        open_dashboard()
-        
-    except FileNotFoundError:
-        messagebox.showerror("Setup Error", "client_secret.json not found. \n(See Google Cloud Console to download yours)")
-    except Exception as e:
-        messagebox.showerror("Login Error", f"Something went wrong: {e}")
-
-def open_dashboard():
-    login_frame.pack_forget() # Hide login
-    dashboard_frame.pack(fill="both", expand=True)
-    
+def handle_email_request():
     user = database.get_logged_in_user()
     if user:
-        lbl_welcome.config(text=f"Logged in as: {user[0]}")
+        # If already logged in, show success
+        email = user[0]
+        messagebox.showinfo("Success", f"Intelligence report sent to {email}")
+    else:
+        # If not logged in, ask to authenticate
+        response = messagebox.askyesno("Login Required", "You need to sign in with Google to email reports. Sign in now?")
+        if response:
+            # Here you would call your start_google_login function
+            # For now, let's simulate a successful login:
+            database.save_user("ryan@example.com", "Ryan")
+            messagebox.showinfo("Auth Success", "Logged in! Click 'Email' again to send.")
 
-# UI Setup
+# --- UI SETUP ---
 root = tk.Tk()
 root.title("News Intelligence System")
-root.geometry("500x400")
+root.geometry("700x550")
 
-# --- LOGIN FRAME ---
-login_frame = tk.Frame(root)
-login_frame.pack(pady=50)
+# Main Container
+main_frame = tk.Frame(root)
+main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-tk.Label(login_frame, text="News Intelligence", font=("Arial", 18, "bold")).pack(pady=10)
-tk.Label(login_frame, text="Use your Google account to receive daily briefs.").pack(pady=5)
+tk.Label(main_frame, text="News Intelligence Dashboard", font=("Arial", 18, "bold")).pack(pady=10)
 
-btn_google = tk.Button(login_frame, text="Sign in with Google", command=start_google_login, 
-                       bg="#4285F4", fg="white", font=("Arial", 11, "bold"), width=20, height=2)
-btn_google.pack(pady=30)
+# The Notebook (Tabs) for Interactivity
+notebook = ttk.Notebook(main_frame)
+notebook.pack(fill="both", expand=True, pady=10)
 
-# --- DASHBOARD FRAME (Hidden initially) ---
-dashboard_frame = tk.Frame(root)
+# Tab 1: Live Feed
+feed_tab = tk.Frame(notebook)
+notebook.add(feed_tab, text=" Live Feed ")
 
-lbl_welcome = tk.Label(dashboard_frame, text="", font=("Arial", 10, "italic"))
-lbl_welcome.pack(pady=10)
+feed_text = tk.Text(feed_tab, height=15)
+feed_text.pack(fill="both", expand=True, padx=10, pady=10)
+feed_text.insert("1.0", "Welcome! Click 'Fetch News' to start.")
 
-tk.Label(dashboard_frame, text="News Control Panel", font=("Arial", 16)).pack(pady=10)
+# Tab 2: Watchlist
+watch_tab = tk.Frame(notebook)
+notebook.add(watch_tab, text=" My Watchlist ")
+tk.Label(watch_tab, text="Add keywords to filter your news:").pack(pady=10)
 
-# Placeholder for the next steps
-btn_scrape = tk.Button(dashboard_frame, text="Fetch Latest News", width=25, bg="#eee")
-btn_scrape.pack(pady=5)
+# Tab 3: Bookmarks
+book_tab = tk.Frame(notebook)
+notebook.add(book_tab, text=" Bookmarks ")
 
-btn_email = tk.Button(dashboard_frame, text="Email My Brief", width=25, bg="#eee")
-btn_email.pack(pady=5)
+# Control Buttons at the Bottom
+btn_frame = tk.Frame(main_frame)
+btn_frame.pack(fill="x", pady=10)
+
+btn_scrape = tk.Button(btn_frame, text="Fetch Latest News", width=20)
+btn_scrape.pack(side="left", padx=5)
+
+btn_email = tk.Button(btn_frame, text="Email My Brief", bg="#4285F4", fg="white", 
+                       width=20, font=("Arial", 10, "bold"), command=handle_email_request)
+btn_email.pack(side="right", padx=5)
 
 root.mainloop()
