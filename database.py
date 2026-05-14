@@ -56,3 +56,23 @@ def get_logged_in_user():
     return user
 
 init_db()
+def add_watchlist_keyword(keyword):
+    """Saves a user keyword trigger to the database"""
+    try:
+        conn = sqlite3.connect('news_data.db')
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR IGNORE INTO watchlist (keyword) VALUES (?)", (keyword.upper(),))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+def get_watchlist_keywords():
+    """Retrieves all saved keywords for the UI listbox"""
+    conn = sqlite3.connect('news_data.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT keyword FROM watchlist")
+    keywords = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return keywords
